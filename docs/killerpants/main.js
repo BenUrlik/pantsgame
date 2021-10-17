@@ -8,8 +8,8 @@ description = `
 characters = [
   `
   pppp
-  p  p
-  p  p
+  pppp
+  pppp
   pppp
   `,
   `
@@ -62,7 +62,7 @@ options = {
   // isSpeedingUpSound: true,
   isShowingScore: true,
   isReplayEnabled: true,
-  seed: 4
+  // seed: 29
 };
 
 let player;
@@ -109,17 +109,7 @@ function update() {
   const player_char = char("a", player.pos);
 
   // Player attack
-  if (moveDist > 1) {
-    player.pos.add(vec(moveDist * 0.2).rotate(moveAngle));
-    moveDist *= 0.2;
-    if (!player.pos.isInRect(10, 10, 90, 90)) {
-      moveAngle += PI;
-    }
-    player.pos.clamp(10, 90, 10, 90);
-  }
   angle += 0.07 * difficulty;
-  // color("light_blue");
-  // arc(50, 50, 7, 4);
   color("light_black");
   line(player.pos, vec(9).rotate(angle).add(player.pos), 2);
   color("black");
@@ -129,7 +119,7 @@ function update() {
   if (isPressing) {
     arcTo = angle;
     range = 300 / sqrt((arcTo - arcFrom) * 30);
-    // color("green");
+    color("green");
     line(player.pos, vec(range).rotate(arcFrom).add(player.pos));
     line(player.pos, vec(range).rotate(arcTo).add(player.pos));
     arc(player.pos, range, 3, arcFrom, arcTo);
@@ -162,11 +152,12 @@ function update() {
     return s.d < s.range;
   });
 
-  // Heart 1
-  
+  // Heart Colors
   const heart_color1 = ["light_red", "light_black"][player.hitpoints >= 1 ? 0 : 1];
   const heart_color2 = ["light_red", "light_black"][player.hitpoints >= 2 ? 0 : 1];
   const heart_color3 = ["light_red", "light_black"][player.hitpoints >= 3 ? 0 : 1];
+ 
+  // Heart 1
   color(heart_color1);
   if(player.hitpoints >= 1) {
     char("c", vec(2, 10));
@@ -176,7 +167,6 @@ function update() {
     char("e", vec(2, 10));
     char("f", vec(2+4, 10));
   }
-
   // Heart 2
   color(heart_color2);
   if(player.hitpoints >= 2) {
@@ -223,7 +213,7 @@ function update() {
   
   // Checks to see if player gets hit by pants
   color("red");
-  if(char("a", player.pos).isColliding.char.b && immunity_timer == 0) { player.hitpoints--; immunity_timer = 30;}
+  if(char("a", player.pos).isColliding.char.b && immunity_timer == 0) { player.hitpoints--; immunity_timer = 30; play("hit");}
 
   // Lose conditions for Game over screen
   color("red");
