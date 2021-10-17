@@ -77,6 +77,7 @@ let shots;
 let isPressing;
 let heart_x = 30;
 let pants_move_speed = 0.5;
+let spawn_rate = 40;
 let player_offset = 5;
 let timer = 0;
 let immunity_timer = 30;
@@ -191,7 +192,9 @@ function update() {
   player.pos = vec(input.pos.x, input.pos.y);
   player.pos.clamp(0+player_offset, window_size.WIDTH-player_offset, 0+player_offset, window_size.HEIGHT-player_offset);
 
-  if(timer >= 100) {
+  if(spawn_rate >= 20) spawn_rate -= ticks/10000;
+  console.log(spawn_rate);
+  if(timer >= spawn_rate) {
     locate_spawn_edge();
     rnd_loc.clamp(0+player_offset, window_size.WIDTH-player_offset, 0+player_offset, window_size.HEIGHT-player_offset);
     pants.push(rnd_loc);
@@ -219,6 +222,7 @@ function update() {
   color("red");
   if(char("a", player.pos).isColliding.char.b && player.hitpoints <= 0) { 
     timer = 0;
+    spawn_rate = 50;
     remove(pants, (obst) => { return true; });
     end(); 
   }
