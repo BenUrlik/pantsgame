@@ -57,7 +57,7 @@ const window_size = {
 options = {
   theme: 'pixel',
   viewSize: {x:window_size.WIDTH, y:window_size.HEIGHT},
-  // isPlayingBgm: true,
+  isPlayingBgm: true,
   // isSpeedingUpSound: true,
   isShowingScore: true,
   isReplayEnabled: true,
@@ -66,9 +66,19 @@ options = {
 
 let player;
 let test_pants;
+let pos;
+let moveAngle;
+let moveDist;
+let angle;
+let arcFrom;
+let arcTo;
+let shots;
+let isPressing;
+let heart_x = 30;
 let pants_move_speed = 0.5;
 let player_offset = 5;
 let timer = 0;
+let immunity_timer = 30;
 let pants = [];
 let rnd_loc = vec();
 
@@ -79,6 +89,12 @@ const spawnpoints = [ vec(window_size.WIDTH/2, window_size.HEIGHT),
 
 function update() {
   if (!ticks) {
+    pos = vec(50, 50);
+    angle = 0;
+    shots = [];
+    isPressing = false;
+    moveAngle = 0;
+    moveDist = 0;
     player = { pos: vec(window_size.WIDTH/2, window_size.HEIGHT/2),
                hitpoints: 3
               };
@@ -88,34 +104,96 @@ function update() {
   }
 
   // Player char
+  color("red");
+  const player_char = char("a", player.pos);
+
+  // Player attack
+  if (moveDist > 1) {
+    player.pos.add(vec(moveDist * 0.2).rotate(moveAngle));
+    moveDist *= 0.2;
+    if (!player.pos.isInRect(10, 10, 90, 90)) {
+      moveAngle += PI;
+    }
+    player.pos.clamp(10, 90, 10, 90);
+  }
+  angle += 0.07 * difficulty;
+  // color("light_blue");
+  // arc(50, 50, 7, 4);
+  color("light_black");
+  line(player.pos, vec(9).rotate(angle).add(player.pos), 2);
+  color("black");
   char("a", player.pos);
+  let range = 0;
+  // Draws the two lines when holding the left mouse button
+  if (isPressing) {
+    arcTo = angle;
+    range = 300 / sqrt((arcTo - arcFrom) * 30);
+    // color("green");
+    line(player.pos, vec(range).rotate(arcFrom).add(player.pos));
+    line(player.pos, vec(range).rotate(arcTo).add(player.pos));
+    arc(player.pos, range, 3, arcFrom, arcTo);
+  }
+  // If the attack gets too big it cancels it
+  if (isPressing && arcTo - arcFrom > PI) {
+    isPressing = false;
+  }
+  // Confirms player shot/wave
+  if (isPressing && input.isJustReleased) {
+    isPressing = false;
+    if (shots.length === 0) {
+      play("select");
+      shots.push({ pos, d: 0, range, arcFrom, arcTo });
+    }
+    moveAngle = (arcTo + arcFrom) / 2;
+    moveDist = range / 2;
+  }
+  // boolean switch for player pressing button
+  if (input.isJustPressed) {
+    play("laser");
+    arcFrom = angle;
+    isPressing = true;
+  }
+  // "Shoots" the waves
+  color("cyan");
+  shots = shots.filter((s) => {
+    s.d += 2;
+    arc(player.pos, s.d, 5, s.arcFrom, s.arcTo);
+    return s.d < s.range;
+  });
 
   // Heart 1
+  
+  const heart_color1 = ["light_red", "light_black"][player.hitpoints >= 1 ? 0 : 1];
+  const heart_color2 = ["light_red", "light_black"][player.hitpoints >= 2 ? 0 : 1];
+  const heart_color3 = ["light_red", "light_black"][player.hitpoints >= 3 ? 0 : 1];
+  color(heart_color1);
   if(player.hitpoints >= 1) {
-    char("c", vec(10, 3));
-    char("d", vec(10+4, 3));
+    char("c", vec(2, 10));
+    char("d", vec(2+4, 10));
   } else {
-    char("e", vec(10, 3));
-    char("f", vec(10+4, 3));
+    // color("white");
+    char("e", vec(2, 10));
+    char("f", vec(2+4, 10));
   }
 
   // Heart 2
+  color(heart_color2);
   if(player.hitpoints >= 2) {
-    char("c", vec(20, 3));
-    char("d", vec(20+4, 3));
+    char("c", vec(12, 10));
+    char("d", vec(12+4, 10));
   } else {
-    char("e", vec(20, 3));
-    char("f", vec(20+4, 3));
+    char("e", vec(12, 10));
+    char("f", vec(12+4, 10));
   }
-  
+  color(heart_color3);
   // Heart 3
   if(player.hitpoints >= 3) {
-    char("c", vec(30, 3));
-    char("d", vec(30+4, 3));
+    char("c", vec(22, 10));
+    char("d", vec(22+4, 10));
   }
   else {
-    char("e", vec(30, 3));
-    char("f", vec(30+4, 3));
+    char("e", vec(22, 10));
+    char("f", vec(22+4, 10));
   }
   
   // Player movement and limitations
@@ -123,9 +201,7 @@ function update() {
   player.pos.clamp(0+player_offset, window_size.WIDTH-player_offset, 0+player_offset, window_size.HEIGHT-player_offset);
 
   if(timer >= 100) {
-    // let rnd_loc = vec(rnd(0,10), rnd(0,window_size.HEIGHT));
     locate_spawn_edge();
-    console.log(rnd_loc);
     rnd_loc.clamp(0+player_offset, window_size.WIDTH-player_offset, 0+player_offset, window_size.HEIGHT-player_offset);
     pants.push(rnd_loc);
     timer = 0;
@@ -133,22 +209,29 @@ function update() {
 
   // Spawns pants in array
   pants.forEach((o) => {
-    char("b", o);
+    color("blue");
+    const your_mom = char("b", o).isColliding.rect.cyan;
+    if(your_mom ) { 
+      remove(pants, (p , i = 1) => { if(p == o) return true;});
+      addScore(100);
+    }
     let choice = floor(rnd(0,2));
     if(choice == 0) chase_player(o);
     else if (choice == 1)do_random_shit(o);
   });
   
   // Checks to see if player gets hit by pants
-  if(char("a", player.pos).isColliding.char.b) { player.hitpoints--; console.log(player.hitpoints); }
+  color("red");
+  if(char("a", player.pos).isColliding.char.b && immunity_timer == 0) { player.hitpoints--; immunity_timer = 30;}
 
   // Lose conditions for Game over screen
+  color("red");
   if(char("a", player.pos).isColliding.char.b && player.hitpoints <= 0) { 
     timer = 0;
     remove(pants, (obst) => { return true; });
     end(); 
   }
-
+  if(immunity_timer != 0) immunity_timer--;
   timer++;
 }
 
