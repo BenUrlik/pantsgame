@@ -1,7 +1,8 @@
 title = "Killer Pants";
 
 description = `
-left click to start
+(Left click) Start
+(Hold) Attack
 `;
 
 characters = [
@@ -61,7 +62,7 @@ options = {
   // isSpeedingUpSound: true,
   isShowingScore: true,
   isReplayEnabled: true,
-  // seed: 300
+  seed: 4
 };
 
 let player;
